@@ -9,6 +9,8 @@ const blockchain_1 = require("./blockchain");
 const node_1 = require("./node");
 const account_1 = require("./account");
 const class_store_1 = __importDefault(require("../class.store"));
+const wallet_event_emitter_1 = require("./wallet-event-emitter");
+const transaction_1 = require("./transaction");
 class Wallet {
     /**
      * Creates an instance of wallet.
@@ -54,6 +56,7 @@ class Wallet {
                 const currentBlockchainEnum = blockchain_1.Blockchain[data.blockchains[bcType]];
                 const currentBlockchain = blockchain_1.Blockchain[currentBlockchainEnum];
                 const AccountClassTypeString = account_1.GenericAccount.getImplementedClassName(blockchain_1.Blockchain[currentBlockchain]);
+                const TransactionClassTypeString = transaction_1.GenericTransaction.getImplementedClassName(blockchain_1.Blockchain[currentBlockchain]);
                 const NodeClassTypeString = node_1.GenericNode.getImplementedClassName(blockchain_1.Blockchain[currentBlockchain]);
                 const bc = wallet.getBlockchain(blockchain_1.Blockchain[currentBlockchainEnum]);
                 const currentNetworkId = bc.getCurrentNetwork();
@@ -87,18 +90,32 @@ class Wallet {
                             currentNode = CustomNode;
                         }
                         // HW account setup
-                        importedAccount = wallet.importAccount(wallet.mapper.getInstance(AccountClassTypeString, {
-                            node: currentNode,
-                            type: account_1.AccountType.HARDWARE,
-                            address: account.address,
-                        }));
+                        importedAccount = wallet.importAccount(wallet.mapper.getInstance(AccountClassTypeString, Object.assign({}, account, { node: currentNode, type: account_1.AccountType.HARDWARE })));
                     }
                     // set custom url on node if found
                     if (account.node.customNetworkUrl) {
                         importedAccount.node.setCustomNetworkUrl(account.node.network.url);
                     }
                     // import transactions
-                    importedAccount.transactions = account.transactions;
+                    importedAccount.transactions = account.transactions.map((tx) => {
+                        let t = wallet.mapper.getInstance(TransactionClassTypeString, [
+                            tx.from,
+                            tx.to,
+                            tx.amount,
+                            tx.nonce,
+                            tx.options
+                        ]);
+                        t.id = tx.id;
+                        t.status = tx.status;
+                        t.times = tx.times;
+                        if (tx.usedGas) {
+                            t.usedGas = tx.usedGas;
+                        }
+                        return t;
+                    });
+                    // import account name
+                    importedAccount.name = account.name;
+                    importedAccount.disabled = account.disabled;
                 }
             }
         }
@@ -129,7 +146,7 @@ class Wallet {
      */
     getAccounts(blockchain, reference = true, filter = false, networkId) {
         this.requireImplementation(blockchain, "getAccounts");
-        networkId = networkId || this.getCurrentNetwork(blockchain);
+        networkId = typeof networkId === 'number' ? networkId : this.getCurrentNetwork(blockchain);
         let Results = this.accounts.get(blockchain);
         if (!Results) {
             Results = [];
@@ -163,6 +180,28 @@ class Wallet {
     getAccountsMap() {
         return this.accounts;
     }
+    removeAccount(blockchain, address, networkId) {
+        this.requireImplementation(blockchain, "getAccounts");
+        networkId = typeof networkId === 'number' ? networkId : this.getCurrentNetwork(blockchain);
+        const accounts = this.accounts.get(blockchain);
+        if (accounts) {
+            for (let i = 0; i < accounts.length; i++) {
+                const account = accounts[i];
+                if (accounts[i].address.toLowerCase() === address.toLowerCase() && account.node.network.network_id === networkId) {
+                    switch (account.type) {
+                        case account_1.AccountType.HD:
+                            account.disabled = true;
+                            break;
+                        case account_1.AccountType.HARDWARE:
+                        case account_1.AccountType.LOOSE:
+                            accounts.splice(i, 1);
+                            break;
+                    }
+                    break;
+                }
+            }
+        }
+    }
     /**
      * Gets blockchain
      * @param blockchain
@@ -175,11 +214,17 @@ class Wallet {
             getAllAccounts: () => this.getAccounts(blockchain, false, false),
             createAccount: () => this.createAccount(blockchain),
             importAccount: (account) => this.importAccount(account),
+            importAccountByPrivateKey: (privateKey) => this.importAccountByPrivateKey(blockchain, privateKey),
+            importHWAccount: (deviceType, derivationPath, address, publicKey, accountIndex, derivationIndex) => this.importHWAccount(deviceType, blockchain, derivationPath, address, publicKey, accountIndex, derivationIndex),
             getNetworks: () => this.getNetworks(blockchain),
             getCurrentNetwork: () => this.getCurrentNetwork(blockchain),
             switchNetwork: (networkId) => this.switchNetwork(blockchain, networkId),
             getInitializedNodes: () => this.nodes.get(blockchain),
+            removeAccount: (address, networkId) => this.removeAccount(blockchain, address, networkId)
         };
+    }
+    subscribe(callback) {
+        return wallet_event_emitter_1.WalletEventEmitter.subscribe(callback);
     }
     /**
      * Gets networks
@@ -217,7 +262,7 @@ class Wallet {
      */
     getNode(blockchain, networkId) {
         this.requireImplementation(blockchain, "getNode");
-        networkId = networkId || this.getCurrentNetwork(blockchain);
+        networkId = typeof networkId === 'number' ? networkId : this.getCurrentNetwork(blockchain);
         let initialisedNodesMap = this.nodes.get(blockchain);
         if (initialisedNodesMap === undefined) {
             initialisedNodesMap = new Map();
@@ -243,8 +288,8 @@ class Wallet {
      */
     createAccount(blockchain, networkId) {
         this.requireImplementation(blockchain, "createAccount");
-        networkId = networkId || this.getCurrentNetwork(blockchain);
-        const existingAccounts = this.getAccounts(blockchain);
+        networkId = typeof networkId === 'number' ? networkId : this.getCurrentNetwork(blockchain);
+        const existingAccounts = this.getAccounts(blockchain, false, true, networkId).filter(acc => acc.type === account_1.AccountType.HD);
         const accountNode = this.getNode(blockchain, networkId);
         const hdkey = accountNode.HDRootKey.deriveChild(existingAccounts.length);
         const accountOptions = {
@@ -279,13 +324,47 @@ class Wallet {
             throw new Error("importAccount: you cannot import HD Wallets.");
         }
         const accountStore = this.getAccounts(account.node.blockchain);
-        // generate address for loose imports
-        if (account.type === account_1.AccountType.LOOSE) {
-            account.publicKey = account.utils.bufferToHex(account.utils.privateToPublic(Buffer.from(account.privateKey, "hex")));
-            account.address = account.utils.toChecksumAddress(account.utils.privateToAddress(Buffer.from(account.privateKey, "hex")).toString("hex"));
-        }
         accountStore.push(account);
         return accountStore[accountStore.length - 1];
+    }
+    /**
+     * Imports account
+     * @param account
+     * @returns account
+     */
+    importHWAccount(deviceType, blockchain, derivationPath, address, publicKey, accountIndex, derivationIndex) {
+        const AccountClassTypeString = account_1.GenericAccount.getImplementedClassName(blockchain);
+        const account = this.mapper.getInstance(AccountClassTypeString, {
+            node: this.getNode(blockchain),
+            type: account_1.AccountType.HARDWARE,
+            address,
+            publicKey,
+            accountIndex,
+            derivationIndex,
+            derivationPath,
+            deviceType
+        });
+        // prevent account duplication
+        const existingAccount = this.getAccounts(blockchain, true, true).filter(a => a.address === account.address)[0];
+        if (existingAccount) {
+            return existingAccount;
+        }
+        return this.importAccount(account);
+    }
+    importAccountByPrivateKey(blockchain, privateKey) {
+        privateKey = privateKey.toLocaleLowerCase().replace(/^0x/, '');
+        const AccountClassTypeString = account_1.GenericAccount.getImplementedClassName(blockchain);
+        const account = this.mapper.getInstance(AccountClassTypeString, {
+            node: this.getNode(blockchain),
+            type: account_1.AccountType.LOOSE,
+            privateKey: privateKey,
+        });
+        // prevent account duplication
+        const existingAccount = this.getAccounts(blockchain, true, true).filter(a => a.address === account.address)[0];
+        if (existingAccount) {
+            return existingAccount;
+        }
+        return this.importAccount(account);
     }
     /**
      * Serialises wallet and returns a json string

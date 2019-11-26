@@ -40,7 +40,7 @@ export declare class EthereumAccount extends GenericAccount<EthereumTransaction,
      * @param txGasLimit
      * @returns transfer transaction
      */
-    buildTransferTransaction(to: string, amount: number, nonce: number, txGasPrice: number, txGasLimit: number): EthereumTransaction;
+    buildTransferTransaction(to: string, amount: string, nonce: number, txGasPrice: number, txGasLimit: number): EthereumTransaction;
     /**
      * Params ethereum account
      * @param to
@@ -51,7 +51,7 @@ export declare class EthereumAccount extends GenericAccount<EthereumTransaction,
      * @param [txGasLimit]
      * @returns a cost estimate
      */
-    estimateTransaction(to: string, amount: number, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): Promise<number>;
+    estimateTransaction(to: string, amount: string, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): Promise<number>;
     /**
      * Builds transaction
      * @param to
@@ -62,11 +62,12 @@ export declare class EthereumAccount extends GenericAccount<EthereumTransaction,
      * @param txGasLimit
      * @returns transaction
      */
-    buildTransaction(to: string, amount: number, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): EthereumTransaction;
+    buildTransaction(to: string, amount: string, nonce: number, txGasPrice?: number, txGasLimit?: number, extra?: any): EthereumTransaction;
     /**
      * Signs transaction
      * @param transaction
      * @returns serialized data
      */
     signTransaction(transaction: EthereumTransaction): Buffer;
+    signMessage(msg: Buffer): string;
 }

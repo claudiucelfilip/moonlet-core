@@ -2,6 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const bignumber_js_1 = require("bignumber.js");
 class GenericAccountUtils {
+    static getImplementedClassName(name) {
+        name = name.toLowerCase();
+        return name.charAt(0).toUpperCase() + name.slice(1) + "AccountUtils";
+    }
     /**
      * Parameter type validation
      * @param target

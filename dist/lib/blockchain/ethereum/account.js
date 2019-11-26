@@ -16,7 +16,7 @@ class EthereumAccount extends account_1.GenericAccount {
         super(accountOptions);
         this.supportsCancel = true;
         this.utils = new account_utils_1.EthereumAccountUtils();
-        this.tryHdWalletSetup();
+        this.tryWalletSetup();
     }
     /**
      * Gets balance
@@ -44,7 +44,7 @@ class EthereumAccount extends account_1.GenericAccount {
      * @returns a new cancel transaction
      */
     buildCancelTransaction(nonce, txGasPrice) {
-        return this.buildTransferTransaction(this.address, 0, nonce, txGasPrice, 21000);
+        return this.buildTransferTransaction(this.address, '0', nonce, txGasPrice, 21000);
     }
     /**
      * Builds transfer transaction
@@ -56,7 +56,7 @@ class EthereumAccount extends account_1.GenericAccount {
      * @returns transfer transaction
      */
     buildTransferTransaction(to, amount, nonce, txGasPrice, txGasLimit) {
-        return this.buildTransaction(to, amount, nonce, Buffer.from(""), txGasPrice, txGasLimit);
+        return this.buildTransaction(to, amount, nonce, txGasPrice, txGasLimit, { data: Buffer.from("") });
     }
     /**
      * Params ethereum account
@@ -69,7 +69,7 @@ class EthereumAccount extends account_1.GenericAccount {
      * @returns a cost estimate
      */
     estimateTransaction(to, amount, nonce, txdata, txGasPrice = 1, txGasLimit = 6700000) {
-        return this.node.estimateGas(this.buildTransaction(to, amount, nonce, txdata, txGasPrice, txGasLimit).toParams());
+        return this.node.estimateGas(this.buildTransaction(to, amount, nonce, txGasPrice, txGasLimit, { data: txdata }).toParams());
     }
     /**
      * Builds transaction
@@ -81,7 +81,7 @@ class EthereumAccount extends account_1.GenericAccount {
      * @param txGasLimit
      * @returns transaction
      */
-    buildTransaction(to, amount, nonce, txdata, txGasPrice = 1, txGasLimit = 6700000) {
+    buildTransaction(to, amount, nonce, txGasPrice = 1, txGasLimit = 6700000, extra = {}) {
         return new transaction_1.EthereumTransaction(this.address, // from me
         to, // to actual receiver
         amount, // value in wei
@@ -90,7 +90,7 @@ class EthereumAccount extends account_1.GenericAccount {
             gasPrice: txGasPrice,
             gasLimit: txGasLimit,
             chainId: this.node.network.chainId,
-            data: txdata,
+            data: extra.data,
         });
     }
     /**
@@ -104,6 +104,9 @@ class EthereumAccount extends account_1.GenericAccount {
         const serialized = tx.serialize();
         transaction.setSignedResult(serialized);
         return serialized;
+    }
+    signMessage(msg) {
+        throw new Error('NOT_IMPLEMENTED');
     }
 }
 exports.EthereumAccount = EthereumAccount;

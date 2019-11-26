@@ -1,9 +1,11 @@
 /// <reference types="node" />
 import { Blockchain } from "./blockchain";
 import { GenericNode } from "./node";
-import { GenericAccount } from "./account";
+import { GenericAccount, HWDevice } from "./account";
 import DynamicClassMapper from "../class.store";
 import { IBlockchainImplementation } from "./blockchain-implementation";
+import { WalletEventType, WalletEventData } from "./wallet-event-emitter";
+import { GenericTransaction } from "./transaction";
 export interface WalletExport {
     mnemonics: string;
     mnemonicslang: string;
@@ -59,6 +61,7 @@ export default class Wallet {
      * @returns accounts map
      */
     getAccountsMap(): Map<Blockchain, GenericAccount[]>;
+    removeAccount(blockchain: Blockchain, address: string, networkId?: number): void;
     /**
      * Gets blockchain
      * @param blockchain
@@ -66,15 +69,19 @@ export default class Wallet {
      */
     getBlockchain(blockchain: Blockchain): {
         getNode: () => GenericNode;
-        getAccounts: () => GenericAccount<import("./transaction").GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>[];
-        getAllAccounts: () => GenericAccount<import("./transaction").GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>[];
-        createAccount: () => GenericAccount<import("./transaction").GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>;
-        importAccount: (account: GenericAccount<import("./transaction").GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>) => GenericAccount<import("./transaction").GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>;
+        getAccounts: () => GenericAccount<GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>[];
+        getAllAccounts: () => GenericAccount<GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>[];
+        createAccount: () => GenericAccount<GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>;
+        importAccount: (account: GenericAccount<GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>) => GenericAccount<GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>;
+        importAccountByPrivateKey: (privateKey: string) => any;
+        importHWAccount: (deviceType: HWDevice, derivationPath: string, address: string, publicKey: string, accountIndex: string, derivationIndex: string) => GenericAccount<GenericTransaction<import("./transaction").ITransactionOptions>, import("./transaction").ITransactionOptions>;
         getNetworks: () => import("./network").Network[];
         getCurrentNetwork: () => number;
         switchNetwork: (networkId: any) => GenericNode;
         getInitializedNodes: () => Map<number, GenericNode>;
+        removeAccount: (address: string, networkId?: number) => void;
     };
+    subscribe(callback: (type: WalletEventType, data: WalletEventData) => any): () => any;
     /**
      * Gets networks
      * @param blockchain
@@ -120,6 +127,13 @@ export default class Wallet {
      * @returns account
      */
     importAccount(account: GenericAccount): GenericAccount;
+    /**
+     * Imports account
+     * @param account
+     * @returns account
+     */
+    importHWAccount(deviceType: HWDevice, blockchain: Blockchain, derivationPath: string, address: string, publicKey: string, accountIndex: string, derivationIndex: string): GenericAccount;
+    importAccountByPrivateKey(blockchain: Blockchain, privateKey: string): any;
     /**
      * Serialises wallet and returns a json string
      * @returns json

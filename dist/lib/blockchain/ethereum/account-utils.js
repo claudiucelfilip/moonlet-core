@@ -28,7 +28,11 @@ class EthereumAccountUtils extends account_utils_1.GenericAccountUtils {
      */
     isValidAddress(key) {
         this.requireType(key, "Buffer", "isValidAddress");
-        return EthereumUtil.isValidAddress(key);
+        let address = key.toString('hex');
+        if (address.indexOf('0x') !== 0) {
+            address = '0x' + address;
+        }
+        return EthereumUtil.isValidAddress(address);
     }
     /**
      * Determines whether buffer contains a valid private key

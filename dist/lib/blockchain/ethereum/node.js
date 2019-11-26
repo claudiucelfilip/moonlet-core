@@ -53,17 +53,11 @@ class EthereumNode extends node_1.GenericNode {
      * @returns transaction receipt
      */
     getTransactionReceipt(transaction) {
-        if (transaction.receipt !== undefined) {
-            return Promise.resolve(transaction.receipt);
-        }
-        else {
-            return this.rpcCall("eth_getTransactionReceipt", [transaction.txn], "raw").then(data => {
-                transaction.setReceiptStatus(data);
-                return Promise.resolve(data);
-            }).catch(error => {
-                return Promise.reject(error);
-            });
-        }
+        return this.rpcCall("eth_getTransactionReceipt", [transaction.id], "raw").then(data => {
+            return Promise.resolve(data);
+        }).catch(error => {
+            return Promise.reject(error);
+        });
     }
     /**
      * Sends a transaction to the current network

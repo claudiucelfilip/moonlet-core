@@ -10,7 +10,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const account_1 = require("../../core/account");
 const transaction_1 = require("./transaction");
 const account_utils_1 = require("./account-utils");
-const ZilliqaJsCrypto = __importStar(require("@zilliqa-js/crypto"));
+const schnorr = __importStar(require("@zilliqa-js/crypto/dist/schnorr"));
+const bech32_1 = require("@zilliqa-js/crypto/dist/bech32");
+const validation_1 = require("@zilliqa-js/util/dist/validation");
 class ZilliqaAccount extends account_1.GenericAccount {
     /**
      * Creates an instance of zilliqa account.
@@ -19,7 +21,19 @@ class ZilliqaAccount extends account_1.GenericAccount {
     constructor(accountOptions) {
         super(accountOptions);
         this.utils = new account_utils_1.ZilliqaAccountUtils();
-        this.tryHdWalletSetup();
+        this.tryWalletSetup();
+        // transform address in bech32 format
+        if (!validation_1.isBech32(this.address)) {
+            this.address = bech32_1.toBech32Address(this.address);
+        }
+        // todo add t in front for testnet addresses
+        // if (!this.node.network.mainNet && !this.address.startsWith('t')) {
+        //     this.address = 't' + this.address;
+        // }
+        this.addressFormats = {
+            default: this.address,
+            base16: bech32_1.fromBech32Address(this.address)
+        };
     }
     /**
      * Gets balance
@@ -44,8 +58,8 @@ class ZilliqaAccount extends account_1.GenericAccount {
      * @param txGasPrice
      * @returns transfer transaction
      */
-    buildTransferTransaction(to, amount, nonce, txGasLimit, txGasPrice) {
-        return this.buildTransaction(to, amount, nonce, Buffer.from(""), txGasPrice, txGasLimit);
+    buildTransferTransaction(to, amount, nonce, txGasPrice, txGasLimit) {
+        return this.buildTransaction(to, amount, nonce, txGasPrice, txGasLimit, { data: Buffer.from("") });
     }
     /**
      * Estimates transaction
@@ -79,7 +93,8 @@ class ZilliqaAccount extends account_1.GenericAccount {
      * @param txGasLimit
      * @returns transaction
      */
-    buildTransaction(to, amount, nonce, txdata, txGasPrice = 0, txGasLimit = 8000000) {
+    buildTransaction(to, amount, nonce, txGasPrice = 0, txGasLimit = 8000000, extra = {}) {
+        const { code, data } = extra;
         return new transaction_1.ZilliqaTransaction(this.address, // from me
         to, // to actual receiver
         amount, // value in qa
@@ -88,8 +103,22 @@ class ZilliqaAccount extends account_1.GenericAccount {
             gasPrice: txGasPrice,
             gasLimit: txGasLimit,
             chainId: this.node.network.chainId,
-            data: txdata,
+            data: Buffer.from(data || ""),
+            code: Buffer.from(code || ""),
+            pubKey: this.publicKey
         });
+    }
+    sign(msg, privateKey, pubKey) {
+        const sig = schnorr.sign(msg, Buffer.from(privateKey, 'hex'), Buffer.from(pubKey, 'hex'));
+        let r = sig.r.toString('hex');
+        let s = sig.s.toString('hex');
+        while (r.length < 64) {
+            r = '0' + r;
+        }
+        while (s.length < 64) {
+            s = '0' + s;
+        }
+        return r + s;
     }
     /**
      * Signs transaction
@@ -99,9 +128,10 @@ class ZilliqaAccount extends account_1.GenericAccount {
     signTransaction(transaction) {
         const TXObject = transaction.toParams(this.publicKey.replace("0x", ""));
         // the address should be checksummed and we need to lowercase it for signing
+        // add 0x back to signing payload
         TXObject.toAddr = TXObject.toAddr.toLowerCase();
         const bytes = transaction.getProtoEncodedTx(TXObject);
-        const signature = ZilliqaJsCrypto.sign(bytes, this.privateKey.replace("0x", ""), this.publicKey.replace("0x", ""));
+        const signature = this.sign(bytes, this.privateKey.replace("0x", ""), this.publicKey.replace("0x", ""));
         TXObject.signature = signature;
         const serialized = Buffer.from(JSON.stringify(TXObject));
         transaction.TXObject = TXObject;
@@ -113,6 +143,12 @@ class ZilliqaAccount extends account_1.GenericAccount {
      */
     buildCancelTransaction(nonce, txGasPrice) {
         return false;
+    }
+    signMessage(msg) {
+        if (typeof msg === 'string') {
+            msg = Buffer.from(msg);
+        }
+        return this.sign(msg, this.privateKey.replace("0x", ""), this.publicKey.replace("0x", ""));
     }
 }
 exports.ZilliqaAccount = ZilliqaAccount;

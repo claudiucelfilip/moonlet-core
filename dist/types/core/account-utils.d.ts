@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { BigNumber } from "bignumber.js";
 export declare abstract class GenericAccountUtils {
+    static getImplementedClassName(name: string): string;
     /**
      * Parameter type validation
      * @param target

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const account_utils_1 = require("./account-utils");
 const account_1 = require("./account");
 const node_1 = require("./node");
 const transaction_1 = require("./transaction");
@@ -12,6 +13,7 @@ const AvailableClasses = {
     ZilliqaAccount: account_1.ZilliqaAccount,
     ZilliqaNode: node_1.ZilliqaNode,
     ZilliqaTransaction: transaction_1.ZilliqaTransaction,
+    ZilliqaAccountUtils: account_utils_1.ZilliqaAccountUtils
 };
 exports.Zilliqa = {
     AvailableClasses,

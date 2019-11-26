@@ -40,6 +40,7 @@ export declare abstract class GenericNode {
      * Resets custom network url
      */
     resetCustomNetworkUrl(): void;
+    rpcCallRaw(method: string, params: any): Promise<any>;
     /**
      * Posts an RPC call to the current network
      * @param method - RPC Method name

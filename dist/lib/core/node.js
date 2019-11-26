@@ -66,6 +66,13 @@ class GenericNode {
             }
         }
     }
+    rpcCallRaw(method, params) {
+        const callData = this.buildCall(method, params);
+        const callOptions = {};
+        const action = axios_1.default.post(this.network.url, callData, callOptions);
+        //console.log( "CallData: ", callData );
+        return action;
+    }
     /**
      * Posts an RPC call to the current network
      * @param method - RPC Method name
@@ -74,12 +81,8 @@ class GenericNode {
      * @returns raw or decoded result
      */
     rpcCall(method, params, dec) {
-        const callData = this.buildCall(method, params);
-        const callOptions = {};
-        const action = axios_1.default.post(this.network.url, callData, callOptions);
-        // console.log( "CallData: ", callData );
-        return action.then((data) => {
-            // console.log( "return result:", data );
+        return this.rpcCallRaw(method, params).then((data) => {
+            //console.log( "return result:", data );
             if (data.data.result !== undefined) {
                 return this.resultDecoder(data.data.result, dec);
             }
@@ -87,6 +90,7 @@ class GenericNode {
                 return Promise.reject(data.data.error.message);
             }
         }).catch((error) => {
+            // console.log( "return error:", method, params, error );
             return Promise.reject(new Error(error));
         });
     }

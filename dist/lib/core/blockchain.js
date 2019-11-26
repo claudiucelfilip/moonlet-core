@@ -4,5 +4,6 @@ var Blockchain;
 (function (Blockchain) {
     Blockchain["ETHEREUM"] = "ETHEREUM";
     Blockchain["ZILLIQA"] = "ZILLIQA";
+    Blockchain["WAVELET"] = "WAVELET";
 })(Blockchain = exports.Blockchain || (exports.Blockchain = {}));
 //# sourceMappingURL=blockchain.js.map

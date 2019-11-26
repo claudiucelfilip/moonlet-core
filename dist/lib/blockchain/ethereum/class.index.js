@@ -8,10 +8,12 @@ const node_1 = require("./node");
 const transaction_1 = require("./transaction");
 const config_1 = __importDefault(require("./config"));
 const networks_1 = __importDefault(require("./networks"));
+const account_utils_1 = require("./account-utils");
 const AvailableClasses = {
     EthereumAccount: account_1.EthereumAccount,
     EthereumNode: node_1.EthereumNode,
     EthereumTransaction: transaction_1.EthereumTransaction,
+    EthereumAccountUtils: account_utils_1.EthereumAccountUtils
 };
 exports.Ethereum = {
     AvailableClasses,

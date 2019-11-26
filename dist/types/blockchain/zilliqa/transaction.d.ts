@@ -15,12 +15,11 @@ export declare class ZilliqaTransaction extends GenericTransaction<IZilliqaTrans
     version: number;
     pubKey: string;
     code: Buffer;
-    amount: number;
     chainId: number;
     gasPrice: number;
     gasLimit: number;
+    usedGas: number;
     TXObject: any;
-    txn: any;
     /**
      * Creates an instance of a zilliqa transaction.
      * @param from
@@ -29,7 +28,7 @@ export declare class ZilliqaTransaction extends GenericTransaction<IZilliqaTrans
      * @param nonce
      * @param options
      */
-    constructor(from: string, to: string, amount: number, nonce: number, options: IZilliqaTransactionOptions);
+    constructor(from: string, to: string, amount: string, nonce: number, options: IZilliqaTransactionOptions);
     /**
      * Converts current transaction to a parameters object required for transaction signing
      * @returns parameters object
@@ -46,10 +45,25 @@ export declare class ZilliqaTransaction extends GenericTransaction<IZilliqaTrans
         data: string;
         signature: string;
     };
+    serialize(): {
+        amount: string;
+        gasPrice: string;
+        gasLimit: string;
+        version: number;
+        toAddr: string;
+        nonce: number;
+        pubKey: string;
+        code: string;
+        data: string;
+        signature: string;
+    };
+    setLedgerSignResult(params: any): void;
     /**
      * Gets proto encoded tx
      * @param TXObject
      * @returns proto encoded tx
      */
     getProtoEncodedTx(TXObject: any): Buffer;
+    setTxn(data: any): void;
+    updateData(data: any): void;
 }

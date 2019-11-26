@@ -2,22 +2,26 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var TransactionStatus;
 (function (TransactionStatus) {
-    TransactionStatus["NEW"] = "NEW";
+    TransactionStatus["CREATED"] = "CREATED";
     TransactionStatus["SIGNED"] = "SIGNED";
+    TransactionStatus["SUBMITTED"] = "SUBMITTED";
     TransactionStatus["PENDING"] = "PENDING";
-    TransactionStatus["FINAL"] = "FINAL";
+    TransactionStatus["SUCCESS"] = "SUCCESS";
+    TransactionStatus["FAILED"] = "FAILED";
 })(TransactionStatus = exports.TransactionStatus || (exports.TransactionStatus = {}));
 class GenericTransaction {
-    constructor(from, to, nonce, options) {
-        this.txn = "";
+    constructor(from, to, amount, nonce, options) {
+        this.id = "";
+        // public receipt: any;
         this.raw = Buffer.from("");
-        this.status = TransactionStatus.NEW;
+        this.status = TransactionStatus.CREATED;
         this.times = [];
         this.from = from;
         this.to = to;
         this.nonce = nonce;
         this.options = options;
-        this.addTime("creation");
+        this.amount = amount;
+        this.addTime(TransactionStatus.CREATED);
     }
     static getImplementedClassName(name) {
         name = name.toLowerCase();
@@ -28,7 +32,7 @@ class GenericTransaction {
      * @param data
      */
     setSignedResult(data) {
-        this.addTime("signed");
+        this.addTime(TransactionStatus.SIGNED);
         this.status = TransactionStatus.SIGNED;
         this.raw = data;
     }
@@ -37,25 +41,21 @@ class GenericTransaction {
      * @param data
      */
     setPending() {
-        this.addTime("pending");
+        this.addTime(TransactionStatus.PENDING);
         this.status = TransactionStatus.PENDING;
     }
-    /**
-     * Sets transaction status to final, adds txn and indexes event
-     * @param data
-     */
-    setTxn(txn) {
-        this.addTime("final");
-        this.status = TransactionStatus.FINAL;
-        this.txn = txn;
+    setStatus(status) {
+        this.addTime(status);
+        this.status = status;
     }
+    ;
     /**
-     * Sets transaction receipt and indexes event
-     * @param data
-     */
-    setReceiptStatus(receipt) {
-        this.addTime("receipt");
-        this.receipt = receipt;
+   * Sets transaction status to final, adds txn and indexes event
+   * @param data
+   */
+    setTxn(txn) {
+        this.addTime(TransactionStatus.SUBMITTED);
+        this.status = TransactionStatus.PENDING;
     }
     /**
      * Converts number to hex string

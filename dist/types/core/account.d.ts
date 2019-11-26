@@ -9,6 +9,9 @@ export declare enum AccountType {
     LOOSE = "LOOSE",
     HARDWARE = "HARDWARE"
 }
+export declare enum HWDevice {
+    LEDGER = "LEDGER"
+}
 export interface IaccountOptions {
     node: GenericNode;
     privateKey?: string;
@@ -16,18 +19,31 @@ export interface IaccountOptions {
     address?: string;
     type: AccountType;
     hd?: any;
+    deviceType?: HWDevice;
+    accountIndex?: string;
+    derivationIndex?: string;
+    derivationPath?: string;
 }
 export declare abstract class GenericAccount<T extends GenericTransaction = GenericTransaction, TO extends ITransactionOptions = ITransactionOptions> {
     static getImplementedClassName(name: string): string;
+    name: string;
     node: GenericNode;
     address: string;
     publicKey: string;
     privateKey: string;
     type: AccountType;
     hd: HDKey | any;
+    deviceType: HWDevice;
+    accountIndex: string;
+    derivationIndex: string;
+    derivationPath: string;
     utils: GenericAccountUtils | any;
     supportsCancel: boolean;
-    private transactions;
+    transactions: T[];
+    disabled: boolean;
+    addressFormats: {
+        [format: string]: string;
+    };
     /**
      * Creates an instance of generic account.
      * @param accountOptions
@@ -36,20 +52,20 @@ export declare abstract class GenericAccount<T extends GenericTransaction = Gene
     /**
      * Trys hd wallet setup
      */
-    tryHdWalletSetup(): void;
+    tryWalletSetup(): void;
     /**
      * Gets transactions
      * @returns transactions
      */
     getTransactions(): T[];
     /**
-     * Sends generic account
+     * Sends transaction
      * @param transaction
      * @param [cb]
      * @param [cbtype]
      * @returns send
      */
-    send(transaction: T, cb?: any, cbtype?: string): Promise<{
+    send(transaction: T): Promise<{
         txn: any;
         receipt: any;
     }>;
@@ -84,7 +100,7 @@ export declare abstract class GenericAccount<T extends GenericTransaction = Gene
      * @param txGasPrice
      * @returns transfer transaction
      */
-    abstract buildTransferTransaction(to: string, amount: number, nonce: number, txGasPrice: number, txGasLimit: number): T;
+    abstract buildTransferTransaction(to: string, amount: string, nonce: number, txGasPrice: number, txGasLimit: number): T;
     /**
      * Estimates transaction
      * @param to
@@ -95,22 +111,22 @@ export declare abstract class GenericAccount<T extends GenericTransaction = Gene
      * @param [txGasLimit]
      * @returns a cost estimate
      */
-    abstract estimateTransaction(to: string, amount: number, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): Promise<number>;
+    abstract estimateTransaction(to: string, amount: string, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): Promise<number>;
     /**
      * Builds transaction
      * @param to
      * @param amount
      * @param nonce
-     * @param txdata
      * @param gasLimit
      * @param gasPrice
      * @returns transaction
      */
-    abstract buildTransaction(to: string, amount: number, nonce: number, txdata: Buffer, gasPrice: number, gasLimit: number): GenericTransaction;
+    abstract buildTransaction(to: string, amount: string, nonce: number, gasPrice: number, gasLimit: number, extra: {}): GenericTransaction;
     /**
      * Signs transaction
      * @param transaction
      * @returns serialized data
      */
     abstract signTransaction(transaction: T): Buffer;
+    abstract signMessage(msg: Buffer | string): string;
 }

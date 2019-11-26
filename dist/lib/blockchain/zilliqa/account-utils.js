@@ -8,8 +8,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const account_utils_1 = require("../../core/account-utils");
-const util_1 = require("@zilliqa-js/util");
-const ZilliqaJsCrypto = __importStar(require("@zilliqa-js/crypto"));
+const ZilliqaJsValidation = __importStar(require("@zilliqa-js/util/dist/validation"));
+const ZilliqaJsCrypto = __importStar(require("@zilliqa-js/crypto/dist/util"));
+const validation_1 = require("@zilliqa-js/util/dist/validation");
 class ZilliqaAccountUtils extends account_utils_1.GenericAccountUtils {
     /**
      * Determines whether string is a valid checksummed address
@@ -18,7 +19,7 @@ class ZilliqaAccountUtils extends account_utils_1.GenericAccountUtils {
      */
     isValidChecksumAddress(address) {
         this.requireType(address, "string", "isValidChecksumAddress");
-        return ZilliqaJsCrypto.isValidChecksumAddress(address);
+        return ZilliqaJsCrypto.isValidChecksumAddress(address) || validation_1.isBech32(address);
     }
     /**
      * Converts an address to a checksummed address
@@ -36,7 +37,7 @@ class ZilliqaAccountUtils extends account_utils_1.GenericAccountUtils {
      */
     isValidAddress(key) {
         this.requireType(key, "Buffer", "isValidAddress");
-        return util_1.validation.isAddress(key.toString("hex"));
+        return ZilliqaJsValidation.isAddress(key.toString("hex"));
     }
     /**
      * Determines whether buffer contains a valid private key
@@ -45,7 +46,7 @@ class ZilliqaAccountUtils extends account_utils_1.GenericAccountUtils {
      */
     isValidPrivate(key) {
         this.requireType(key, "Buffer", "isValidPrivate");
-        return util_1.validation.isPrivateKey(key.toString("hex"));
+        return ZilliqaJsValidation.isPrivateKey(key.toString("hex"));
     }
     /**
      * Determines whether buffer contains a valid public key
@@ -54,7 +55,7 @@ class ZilliqaAccountUtils extends account_utils_1.GenericAccountUtils {
      */
     isValidPublic(key) {
         this.requireType(key, "Buffer", "isValidPublic");
-        return util_1.validation.isPubKey(key.toString("hex"));
+        return ZilliqaJsValidation.isPubKey(key.toString("hex"));
     }
     /**
      * Converts a public key to address

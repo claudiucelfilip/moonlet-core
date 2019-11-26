@@ -27,7 +27,7 @@ export declare class ZilliqaAccount extends GenericAccount<ZilliqaTransaction, I
      * @param txGasPrice
      * @returns transfer transaction
      */
-    buildTransferTransaction(to: string, amount: number, nonce: number, txGasLimit: number, txGasPrice: number): ZilliqaTransaction;
+    buildTransferTransaction(to: string, amount: string, nonce: number, txGasPrice: number, txGasLimit: number): ZilliqaTransaction;
     /**
      * Estimates transaction
      * @param to
@@ -38,7 +38,7 @@ export declare class ZilliqaAccount extends GenericAccount<ZilliqaTransaction, I
      * @param [txGasLimit]
      * @returns a cost estimate
      */
-    estimateTransaction(to: string, amount: number, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): Promise<number>;
+    estimateTransaction(to: string, amount: string, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): Promise<number>;
     /**
      * Builds transaction
      * @param to
@@ -49,7 +49,8 @@ export declare class ZilliqaAccount extends GenericAccount<ZilliqaTransaction, I
      * @param txGasLimit
      * @returns transaction
      */
-    buildTransaction(to: string, amount: number, nonce: number, txdata: Buffer, txGasPrice?: number, txGasLimit?: number): ZilliqaTransaction;
+    buildTransaction(to: string, amount: string, nonce: number, txGasPrice?: number, txGasLimit?: number, extra?: any): ZilliqaTransaction;
+    private sign;
     /**
      * Signs transaction
      * @param transaction
@@ -60,4 +61,5 @@ export declare class ZilliqaAccount extends GenericAccount<ZilliqaTransaction, I
      * not supported
      */
     buildCancelTransaction(nonce: number, txGasPrice: number): ZilliqaTransaction | false;
+    signMessage(msg: Buffer | string): string;
 }
