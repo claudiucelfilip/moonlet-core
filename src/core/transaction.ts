@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js';
-import { ITransactionOptions } from './transaction';
+// import { ITransactionOptions } from './transaction';
 
 export interface ITransactionOptions {
     //
