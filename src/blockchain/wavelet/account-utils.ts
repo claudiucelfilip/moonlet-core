@@ -73,19 +73,8 @@ export class WaveletAccountUtils extends GenericAccountUtils {
     public privateToPublic( privateKey: Buffer ): Buffer {
         this.requireType(privateKey, "Buffer", "privateToPublic");
 
-        const { publicKey } = this.privateToWallet(privateKey);
+        const { publicKey } = Wavelet.loadWalletFromPrivateKey(privateKey);
         return Buffer.from(publicKey);
-    }
-
-    /**
-     * Converts a private key to public key
-     * @param privateKey
-     * @returns public key
-     */
-    public privateToWallet( privateKey: Buffer ): any {
-        this.requireType(privateKey, "Buffer", "privateToPublic");
-
-        return Wavelet.loadWalletFromPrivateKey(privateKey);
     }
 
     /**

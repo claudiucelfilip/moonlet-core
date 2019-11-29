@@ -3,6 +3,7 @@ import { WaveletTransaction, IWaveletTransactionOptions } from "./transaction";
 import { WaveletAccountUtils } from "./account-utils";
 import { BigNumber } from "bignumber.js";
 import nacl from "tweetnacl";
+import { Wavelet } from "wavelet-client";
 
 export class WaveletAccount extends GenericAccount<WaveletTransaction, IWaveletTransactionOptions> {
     public supportsCancel: boolean = true;
@@ -15,11 +16,25 @@ export class WaveletAccount extends GenericAccount<WaveletTransaction, IWaveletT
         super(accountOptions);
         
         this.utils = new WaveletAccountUtils();
+
         this.tryWalletSetup();
-        this.wallet = this.utils.privateToWallet(Buffer.from(this.privateKey, "hex"));
+    }
+
+    /**
+     * Trys hd wallet setup
+     */
+    public tryWalletSetup() {
+        if (!this.privateKey) {
+            this.wallet = Wavelet.generateNewWallet();
+            this.privateKey = this.utils.bufferToHex(Buffer.from(this.wallet.secretKey));
+        } else {
+            this.wallet = Wavelet.loadWalletFromPrivateKey(this.privateKey);
+        }
+        
+        this.publicKey = this.utils.bufferToHex(Buffer.from(this.wallet.publicKey));
+        
         this.address = this.publicKey;
         this.addressFormats.default = this.publicKey;
-        
     }
 
     /**
