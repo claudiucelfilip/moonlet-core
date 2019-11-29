@@ -3,7 +3,7 @@ import { Network } from "../../core/network";
 import networks from "./networks";
 import { BigNumber } from "bignumber.js";
 import { WaveletTransaction } from "./transaction";
-import { Wavelet, JSBI } from "wavelet-client";
+import { Wavelet } from "wavelet-client";
 import axios from "axios";
 
 export class WaveletNode extends GenericNode {
