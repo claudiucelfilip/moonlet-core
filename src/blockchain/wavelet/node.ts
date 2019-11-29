@@ -3,7 +3,7 @@ import { Network } from "../../core/network";
 import networks from "./networks";
 import { BigNumber } from "bignumber.js";
 import { WaveletTransaction } from "./transaction";
-import { Wavelet } from "wavelet-client";
+import { Wavelet, JSBI } from "wavelet-client";
 import axios from "axios";
 
 export class WaveletNode extends GenericNode {
@@ -18,7 +18,7 @@ export class WaveletNode extends GenericNode {
     super();
     this.NETWORKS = networks;
     this.init(network);
-    this.client = new Wavelet(network.url);
+    this.client = new Wavelet(this.network.url);
   }
 
   /**
@@ -36,7 +36,9 @@ export class WaveletNode extends GenericNode {
    * @returns nonce
    */
   public getNonce(caddress: string): Promise<number> {
-    return axios.get(`${this.network.url}/nonce/${caddress}`).then(({data}) => data);
+    return axios.get(`${this.network.url}/nonce/${caddress}`)
+      .then(({data}) => data)
+      .then(({nonce}) => nonce);
   }
 
   /**
@@ -46,11 +48,6 @@ export class WaveletNode extends GenericNode {
    */
   public estimateGas(callArguments: any): Promise<number> {
       return Promise.resolve(15);
-    // return this.rpcCall(
-    //   "eth_estimateGas",
-    //   [callArguments],
-    //   "number"
-    // ) as Promise<any>;
   }
 
   /**
@@ -59,14 +56,7 @@ export class WaveletNode extends GenericNode {
    * @returns transaction receipt
    */
   public getTransactionReceipt(transaction: WaveletTransaction): Promise<any> {
-      return null;
-    // return this.rpcCall("eth_getTransactionReceipt", [transaction.id], "raw")
-    //   .then(data => {
-    //     return Promise.resolve(data);
-    //   })
-    //   .catch(error => {
-    //     return Promise.reject(error);
-    //   });
+      return this.client.getTransaction(transaction.id);
   }
 
   /**
@@ -75,7 +65,11 @@ export class WaveletNode extends GenericNode {
    * @returns result
    */
   public send(transaction: WaveletTransaction): Promise<string> {
-    return this.client.transfer();
+    return this.client.transfer(
+      transaction.wallet,
+      transaction.to,
+      transaction.amount
+    );
     // return this.sendRaw("0x" + transaction.raw.toString("hex"));
   }
 

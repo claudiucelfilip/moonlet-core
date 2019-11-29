@@ -20,8 +20,7 @@
     "start-all-rpcs": "scripts/rpcs/start_all.sh",
     "stop-all-rpcs": "scripts/rpcs/stop_all.sh",
     "coverallstest": "./node_modules/.bin/ts-mocha --require source-map-support/register --full-trace --colors --paths -p ./ test/*/*.ts test/*.ts",
-    "coveralls": "nyc npm run coverallstest && nyc report --reporter=text-lcov | coveralls",
-    "update": "npm run build && npm pack && mv ./moonlet-core-0.0.1.tgz ~ && bash -c \"cd ~/Sites/moonlet && npm i ~/moonlet-core-0.0.1.tgz\""
+    "coveralls": "nyc npm run coverallstest && nyc report --reporter=text-lcov | coveralls"
   },
   "bin": {
     "rpcs": "./scripts/rpc.sh"
@@ -66,7 +65,9 @@
     "bip39": "2.5.0",
     "ethereumjs-tx": "1.3.7",
     "ethereumjs-util": "6.0.0",
-    "hdkey": "1.1.0"
+    "hdkey": "1.1.0",
+    "tweetnacl": "^1.0.1",
+    "wavelet-client": "file:../../wavelet-client-2.0.0.tgz"
   },
   "devDependencies": {
     "tslint-microsoft-contrib": "^6.0.0",

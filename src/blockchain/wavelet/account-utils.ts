@@ -1,6 +1,6 @@
 import { GenericAccountUtils } from "../../core/account-utils";
 import { BigNumber } from "bignumber.js";
-const EthereumUtil = require('ethereumjs-util');
+import { Wavelet } from "wavelet-client";
 
 export class WaveletAccountUtils extends GenericAccountUtils {
 
@@ -11,7 +11,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public isValidChecksumAddress( key: string ): boolean {
         this.requireType(key, "string", "isValidChecksumAddress");
-        return EthereumUtil.isValidChecksumAddress(key);
+        return key.length === 64;
     }
 
     /**
@@ -21,7 +21,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public toChecksumAddress( key: string ): string {
         this.requireType(key, "string", "toChecksumAddress");
-        return EthereumUtil.toChecksumAddress(key);
+        return key;
     }
 
     /**
@@ -31,12 +31,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public isValidAddress( key: Buffer ): boolean {
         this.requireType(key, "Buffer", "isValidAddress");
-        let address = key.toString('hex');
-
-        if (address.indexOf('0x') !== 0) {
-            address = '0x' + address;
-        }
-        return EthereumUtil.isValidAddress(address);
+        return key.length === 64;
     }
 
     /**
@@ -47,11 +42,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
     public isValidPrivate( key: Buffer ): boolean {
         this.requireType(key, "Buffer", "isValidPrivate");
 
-        let privateKey = key.toString();
-        if (privateKey.length === 66) {
-            privateKey = privateKey.replace("0x", "");
-        }
-        return !!privateKey.match(/^[0-9a-fA-F]{64}$/);
+        return key.length === 128;
     }
 
     /**
@@ -61,7 +52,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public isValidPublic( key: Buffer ): boolean {
         this.requireType(key, "Buffer", "isValidPublic");
-        return EthereumUtil.isValidPublic( key );
+        return key.length === 64;
     }
 
     /**
@@ -71,7 +62,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public publicToAddress( key: Buffer ): Buffer {
         this.requireType(key, "Buffer", "publicToAddress");
-        return EthereumUtil.pubToAddress(key);
+        return key;
     }
 
     /**
@@ -81,7 +72,20 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public privateToPublic( privateKey: Buffer ): Buffer {
         this.requireType(privateKey, "Buffer", "privateToPublic");
-        return EthereumUtil.privateToPublic(privateKey);
+
+        const { publicKey } = this.privateToWallet(privateKey);
+        return Buffer.from(publicKey);
+    }
+
+    /**
+     * Converts a private key to public key
+     * @param privateKey
+     * @returns public key
+     */
+    public privateToWallet( privateKey: Buffer ): any {
+        this.requireType(privateKey, "Buffer", "privateToPublic");
+
+        return Wavelet.loadWalletFromPrivateKey(privateKey);
     }
 
     /**
@@ -91,7 +95,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public privateToAddress( privateKey: Buffer ): Buffer {
         this.requireType(privateKey, "Buffer", "privateToAddress");
-        return EthereumUtil.privateToAddress(privateKey);
+        return privateKey;
     }
 
     /**
@@ -101,7 +105,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public addressBufferToChecksum( key: Buffer ): string {
         this.requireType(key, "Buffer", "addressBufferToChecksum");
-        if ( key.length === 20 || key.length === 22 ) {
+        if ( key.length === 64 ) {
             return this.toChecksumAddress( key.toString("hex") );
         }
         throw new Error("address buffer length is invalid");
@@ -114,7 +118,7 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public bufferToHex( buf: Buffer ): string {
         this.requireType(buf, "Buffer", "bufferToHex");
-        return '0x' + buf.toString('hex');
+        return buf.toString('hex');
     }
 
     /**
@@ -124,6 +128,6 @@ export class WaveletAccountUtils extends GenericAccountUtils {
      */
     public balanceToStd( input: BigNumber ): string {
         this.requireType(input, "BigNumber", "balanceToStd");
-        return input.div(10 ** 18).toString();
+        return input.div(10 ** 9).toString();
     }
 }

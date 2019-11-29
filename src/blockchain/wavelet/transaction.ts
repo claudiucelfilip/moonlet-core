@@ -1,15 +1,16 @@
-import WaveletJsTx from 'ethereumjs-tx';
 import { BigNumber } from 'bignumber.js';
 import { TransactionStatus } from './../../core/transaction';
 import { GenericTransaction, ITransactionOptions } from '../../core/transaction';
 import { WalletEventEmitter, WalletEventType } from '../../core/wallet-event-emitter';
 import { Blockchain } from '../../core/blockchain';
+import nacl from "tweetnacl";
 
 export interface IWaveletTransactionOptions extends ITransactionOptions {
     gasPrice: number;
     gasLimit: number;
     chainId: number;
     data?: Buffer;
+    wallet: nacl.SignKeyPair;
 }
 
 export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOptions> {
@@ -17,6 +18,7 @@ export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOp
     public gasPrice: number;
     public gasLimit: number;
     public usedGas: number;
+    public wallet: nacl.SignKeyPair;
 
     /**
      * Creates an instance of an ethereum transaction.
@@ -28,7 +30,7 @@ export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOp
      */
     constructor(from: string, to: string, amount: string, nonce: number, options: IWaveletTransactionOptions) {
         super(from, to, amount, nonce, options);
-
+        this.wallet = options.wallet;
         this.chainId = options.chainId;
         this.gasPrice = options.gasPrice;
         this.gasLimit = options.gasLimit;
@@ -56,36 +58,36 @@ export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOp
     }
 
     public serialize() {
-        const tx = new WaveletJsTx( this.toParams() );
-        return tx.serialize().toString('hex');
+        // const tx = new WaveletJsTx( this.toParams() );
+        // return tx.serialize().toString('hex');
     }
 
     public setLedgerSignResult(params) {
         
-        const tx = new WaveletJsTx( Object.assign(this.toParams(), {
-            r: '0x' + params.r,
-            s: '0x' + params.s,
-            v: '0x' + params.v
-        }) );
-        this.setSignedResult(tx.serialize());
+        // const tx = new WaveletJsTx( Object.assign(this.toParams(), {
+        //     r: '0x' + params.r,
+        //     s: '0x' + params.s,
+        //     v: '0x' + params.v
+        // }) );
+        // this.setSignedResult(tx.serialize());
     }
 
     public setTxn(data: any) {
         super.setTxn(data);
         if (data) {
-            this.id = data;
+            this.id = data.id;
         }
     }
 
     public updateData(data: any) {
-        if (data.transactionHash.toLowerCase() === this.id.toLowerCase()) {
-            let status = parseInt(data.status, 16);
+        if (data.id.toLowerCase() === this.id.toLowerCase()) {
+            let status = data.status;
             
-            this.usedGas = parseInt(data.gasUsed, 16);
-            this.setStatus(status === 1 ? TransactionStatus.SUCCESS : TransactionStatus.FAILED);
+            this.usedGas = 15;
+            this.setStatus(status === "applied" ? TransactionStatus.SUCCESS : TransactionStatus.FAILED);
 
             WalletEventEmitter.emit(WalletEventType.TRANSACTION_UPDATE, {
-                blockchain: Blockchain.ETHEREUM,
+                blockchain: Blockchain.WAVELET,
                 address: this.from,
                 transactionId: this.id,
                 status: this.status
