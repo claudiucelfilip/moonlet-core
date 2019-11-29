@@ -67,7 +67,7 @@
     "ethereumjs-util": "6.0.0",
     "hdkey": "1.1.0",
     "tweetnacl": "^1.0.1",
-    "wavelet-client": "file:../../wavelet-client-2.0.0.tgz"
+    "wavelet-client": "file:~/wavelet-client-2.0.0.tgz"
   },
   "devDependencies": {
     "tslint-microsoft-contrib": "^6.0.0",
