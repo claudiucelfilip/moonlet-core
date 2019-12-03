@@ -78,7 +78,7 @@ export class WaveletAccount extends GenericAccount<WaveletTransaction, IWaveletT
      * @returns transfer transaction
      */
     public buildTransferTransaction(to: string, amount: string, nonce: number, txGasPrice: number, txGasLimit: number): WaveletTransaction {
-        return this.buildTransaction(to, amount, nonce, txGasPrice, txGasLimit, {data: Buffer.from("")});
+        return this.buildTransaction(to, amount, nonce, txGasPrice, txGasLimit);
     }
 
     /**
@@ -106,6 +106,14 @@ export class WaveletAccount extends GenericAccount<WaveletTransaction, IWaveletT
      * @returns transaction
      */
     public buildTransaction(to: string, amount: string, nonce: number, txGasPrice: number = 1, txGasLimit: number = 6700000, extra: any = {}): WaveletTransaction {
+        const { data } = extra;
+        let wallet = this.wallet;
+        if (data) {
+            wallet = {
+                secretKey: new Uint8Array(data.wallet.secretKey),
+                publicKey: new Uint8Array(data.wallet.publicKey)
+            };
+        }
         return new WaveletTransaction(
             this.address,               // from me
             to,                         // to actual receiver
@@ -115,8 +123,8 @@ export class WaveletAccount extends GenericAccount<WaveletTransaction, IWaveletT
                 gasPrice: txGasPrice,   // price in gwei
                 gasLimit: txGasLimit,   // max network allowed gas limit
                 chainId: this.node.network.chainId, // current network chain id
-                data: extra.data,
-                wallet: this.wallet,
+                data,
+                wallet
             },
         );
     }

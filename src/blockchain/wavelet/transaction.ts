@@ -9,7 +9,7 @@ export interface IWaveletTransactionOptions extends ITransactionOptions {
     gasPrice: number;
     gasLimit: number;
     chainId: number;
-    data?: Buffer;
+    data?: any;
     wallet: nacl.SignKeyPair;
 }
 
@@ -19,6 +19,7 @@ export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOp
     public gasLimit: number;
     public usedGas: number;
     public wallet: nacl.SignKeyPair;
+    public data: any;
 
     /**
      * Creates an instance of an ethereum transaction.
@@ -34,7 +35,7 @@ export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOp
         this.chainId = options.chainId;
         this.gasPrice = options.gasPrice;
         this.gasLimit = options.gasLimit;
-        this.data = options.data || Buffer.from("");
+        this.data = options.data;
     }
 
     /**
@@ -48,7 +49,7 @@ export class WaveletTransaction extends GenericTransaction<IWaveletTransactionOp
             gasLimit: this.getNumberToHex( this.gasLimit ),
             to: this.to,
             value: this.getNumberToHex( new BigNumber(this.amount) ),
-            data: "0x" + this.data,
+            data: this.data,
             chainId: this.getNumberToHex( this.chainId ),
 
             v: this.getNumberToHex( this.chainId ),

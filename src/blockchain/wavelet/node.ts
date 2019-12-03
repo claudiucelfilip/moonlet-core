@@ -4,7 +4,6 @@ import networks from "./networks";
 import { BigNumber } from "bignumber.js";
 import { WaveletTransaction } from "./transaction";
 import { Wavelet } from "wavelet-client";
-import axios from "axios";
 
 export class WaveletNode extends GenericNode {
   private client: Wavelet;
@@ -27,7 +26,9 @@ export class WaveletNode extends GenericNode {
    * @returns balance
    */
   public getBalance(caddress: string): Promise<BigNumber> {
-    return this.client.getAccount(caddress).then(({ balance }) => new BigNumber(balance));
+    return this.client
+      .getAccount(caddress)
+      .then(({ balance }) => new BigNumber(balance));
   }
 
   /**
@@ -36,9 +37,7 @@ export class WaveletNode extends GenericNode {
    * @returns nonce
    */
   public getNonce(caddress: string): Promise<number> {
-    return axios.get(`${this.network.url}/nonce/${caddress}`)
-      .then(({data}) => data)
-      .then(({nonce}) => nonce);
+    return Promise.resolve(Date.now() * 1000);
   }
 
   /**
@@ -47,7 +46,7 @@ export class WaveletNode extends GenericNode {
    * @returns gas estimate
    */
   public estimateGas(callArguments: any): Promise<number> {
-      return Promise.resolve(15);
+    return Promise.resolve(15);
   }
 
   /**
@@ -56,7 +55,7 @@ export class WaveletNode extends GenericNode {
    * @returns transaction receipt
    */
   public getTransactionReceipt(transaction: WaveletTransaction): Promise<any> {
-      return this.client.getTransaction(transaction.id);
+    return this.client.getTransaction(transaction.id);
   }
 
   /**
@@ -65,23 +64,20 @@ export class WaveletNode extends GenericNode {
    * @returns result
    */
   public send(transaction: WaveletTransaction): Promise<string> {
-    return this.client.transfer(
-      transaction.wallet,
-      transaction.to,
-      transaction.amount
-    );
-    // return this.sendRaw("0x" + transaction.raw.toString("hex"));
+    if (transaction.data) {
+      return this.sendRaw(transaction);
+    }
+    return this.client.transfer(transaction.wallet, transaction.to, transaction.amount);
   }
 
   /**
    * Sends a raw transaction to the current network
-   * @param data
+   * @param transaction
    * @returns result
    */
-  public sendRaw(data: any): Promise<string> {
-    return this.client.sendTransaction();
-    // return this.rpcCall("eth_sendRawTransaction", [data], "raw") as Promise<
-    //   any
-    // >;
+  public sendRaw(transaction: WaveletTransaction): Promise<string> {
+    const { data } = transaction;
+    
+    return this.client.sendTransaction(transaction.wallet, data.tag, new Uint8Array(data.payload));
   }
 }
